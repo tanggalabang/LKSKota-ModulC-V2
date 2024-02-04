@@ -1,0 +1,669 @@
+# Feature
+
+Search Tour by:
+    Destination
+    Date
+    Price range
+
+*Trending Tours
+
+*Top Destination 
+
+*Detail Tours 
+
+*Review / Testimonial
+
+*Comment 
+
+*Checkout
+
+*Payment
+
+Blog /Local Experience 
+
+*Profile
+    Edit profile 
+    History transaction
+
+
+
+# END POIN
+
+user/register
+    "post" : {
+        "request" : {
+            "name" : "string",
+            "email" : "string",
+            "password" : "string"
+        }
+        "response" : {
+            "200" : {
+                "message" : "Register success",
+                "data" : {
+                    "name" : "string",
+                    "email" : "string",
+                    "token" : "string"
+                }
+            }
+            "401" : {
+                "errors" : {
+                    "name" : {
+                        "error" : "Name must be required"
+                    },
+                    "email" : {
+                        "error" : "Email must be required"
+                    },
+                    "password" : {
+                        "error" : "Password must be required"
+                    }
+                }
+            }
+        }
+    }
+        
+
+user/login 
+    "post" : {
+        "request" : {
+            "email" : "string",
+            "password" : "string"
+        },
+        "response" : {
+           "200" : {
+                "message" : "Login success",
+                "data" : {
+                    "name" : "string",
+                    "email" : "string",
+                    "token" : "string"
+                }
+           },
+           "401" : {
+                "errors" : {
+                    "email" : {
+                        "error" : "Email must be required"
+                    },
+                    "password" : {
+                        "error" : "Password must be required"
+                    }
+                }
+           },
+           "400" : {
+                "error" : "Email or password wrong"
+           }
+        }
+    }
+
+
+user/logout
+    "post" : {
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Logout success"
+            }
+        }
+    }
+
+
+user
+    "get" : {
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Get single user success",
+                "data" : {
+                    "id" : "integer",
+                    "picture" : "string",
+                    "name" : "string",
+                    "email" : "string"
+                }
+            }
+        }
+    },
+    "put" : {
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "name" : "string",
+            "picture" : "object",
+            "email" : "string",
+            "password" : "string,
+        },
+        "response" : {
+            "200" : {
+                "message" : "Update success",
+                "data" : {
+                    "name" : "string",
+                    "picture" : "object",
+                    "email" : "string",
+                }
+            },
+            "400" : {
+                "message" : "Data must be different"
+            },
+            "401" : {
+                "message" : "Picture invalid"
+            }
+        }
+    }
+
+
+destinations
+    "get" : {
+        "description" : "Get 3 top destination most booking",
+        "response" : {
+            "data" : [
+                {
+                    "name" : "string",
+                    "picture" : "string",
+                    "count_of_tours" : "integer"
+                },
+                {
+                    "name" : "string",
+                    "picture" : "string",
+                    "count_of_tours" : "integer"
+                },
+                {
+                    "name" : "string",
+                    "picture" : "string",
+                    "count_of_tours" : "integer"
+                }
+            ]
+        }
+    }
+
+
+tours
+    "get" : {
+        "response" : {
+            "message" : "Get single success",
+            "data" : [
+                {
+                    "name" : "string",
+                    "picture : "string",
+                    "review_rating" : {},
+                },
+                ...
+            ]
+        }
+    }
+
+
+tours/{id}
+    "get" : {
+        "response" : {
+            "message" : "Get single success",
+            "data" : {
+                "name" : "string",
+                "pictures" : [
+                    {
+                        "id" : "integer",
+                        "picture" : "string"
+                    },
+                     {
+                        "id" : "integer",
+                        "picture" : "string"
+                    },
+                    {
+                        "id" : "integer",
+                        "picture" : "string"
+                    },
+                    {
+                        "id" : "integer",
+                        "picture" : "string"
+                    }
+                ]
+                "description" : "string",
+                "itinerary_sugesstion" : "string",
+                "amenities_facilities" : "string",
+                "maps" : "string",
+                "review_rating" : {},
+                "comments" : [
+                    {
+                        "id" : "integer",
+                        "author_name" : "string",
+                        "author_picture" : "string",
+                        "created_date" : "date",
+                        "content" : "string",
+                    }
+                    ...
+                ]
+            }
+        }
+    }
+
+
+reviews-testimonials
+    "get" : {
+        "description" : "Get 3 good reviews / testimonial in different tour",
+        "response" : [
+            {
+                "tour_name" : "string",
+                "autor_name" : "string",
+                "autor_picture" : "string",
+                "rating" : {}
+                "content" : "string",
+                "create_date" : "string"
+            },
+            {
+                "tour_name" : "string",
+                "autor_name" : "string",
+                "autor_picture" : "string",
+                "rating" : {}
+                "content" : "string",
+                "create_date" : "string"
+            },
+            {
+                "tour_name" : "string",
+                "autor_name" : "string",
+                "autor_picture" : "string",
+                "rating" : {}
+                "content" : "string",
+                "create_date" : "string"
+            }
+        ]
+    },
+    "post" : {
+        "description" : "Create reviews / testimonial",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "author_id" : "integer",
+            "tour_id" : "integer",
+            "rating" : "integer",
+            "content" : "string"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Create success",
+            },
+            "401" : {
+                "message" : "Validate error",
+                "errors" : {
+                    "author_id" : {
+                        "error" : "Must be required"
+                    },
+                    "tour_id" : {
+                        "error" : "Must be required"
+                    },
+                    "rating" : {
+                        "error" : "Must be required"
+                    },
+                }
+            }, 
+            "400" : {
+                "message" : "You not have booking in this tour"
+            }
+        }
+    },
+   
+
+review_rating/{id}
+    "put" : {
+        "description" : "Update reviews / testimonial",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "rating" : "integer",
+            "content" : "string"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Update success",
+            },
+            "401" : {
+                "message" : "Data must be different",
+            }, 
+            "400" : {
+                "message" : "You not have booking in this tour"
+            }
+        }
+    },
+    "delete" : {
+        "description" : "Delete reviews / testimonial",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Delete success",
+            },
+            "400" : {
+                "message" : "You not have booking in this tour"
+            }
+        }
+    }
+
+
+comment 
+    "post" : {
+        "description" : "Create comment",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "author_id" : "integer",
+            "type" : "string" : "tour/blog",
+            "tour_id_blog_id" : "integer",
+            "content" : "string"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Create success",
+            },
+            "401" : {
+                "message" : "Validate error",
+                "errors" : {
+                    "author_id" : {
+                        "error" : "Must be required"
+                    },
+                    "tour_id_blog_id" : {
+                        "error" : "Must be required"
+                    },
+                    "content" : {
+                        "error" : "Must be required"
+                    },
+                }
+            }, 
+        }
+    },
+
+
+comment/{id} 
+    "put" : {
+        "description" : "Update comment",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "content" : "string"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Update success",
+            },
+            "401" : {
+                "message" : "Data must be different",
+            }, 
+        }
+    },
+    "delete" : {
+        "description" : "Delete comment",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Delete success",
+            },
+        }
+    },
+
+
+checkout 
+    "get" : {
+        "description" : "Get history checkout / booking by current user",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "response" : [
+            {
+                "tour_name" : "string",
+                "tour_picture" : "string",
+                "date_booking" : "string",
+                "status" : "string"
+            },
+            ...
+        ]
+    }
+    "post" : {
+        "description" : "Create checkout",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "user_id" : "integer",
+            "tour_id" : "integer",
+            "first_name" : "string",
+            "last_name" : "string",
+            "email" : "string",
+            "phone" : "string",
+            "address" : {
+                "addres_1" : "string",
+                "addres_2" : "string",
+                "city" : "string",
+                "province" : "string",
+                "postal_code" : "string",
+                "contry" : "string",
+            },
+            "special_requirement" : "string",
+            "payment" : {
+                "payment_method" : "string",
+                "name" : "string",
+                "number" : "string",
+                "expiry_date" : "string",
+                "cvv" : "string"
+            }
+        },
+        "response" : {
+            "200" : {
+                "message" : "Create success",
+            },
+            "401" : {
+                "message" : "Validate error",
+                "errors" : {
+                   
+                }
+            }, 
+        }
+    },
+
+
+blogs 
+    "get" : {
+        "description" : "Get all blog",
+        "response" : {
+            "200" : [
+                {
+                    "id" : "string",
+                    "title" : "string",
+                    "picture" : "string",
+                    "autor_name" : "string",
+                    "autor_picture" : "string",
+                    "create_date" : "date",
+                    "content" : "string"
+                },
+                ...
+            ]
+        }
+    },
+    "post" : {
+        "description" : "Create blog / local experiences",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "title" : "string",
+            "picture" : "string",
+            "autor_id" : "integer",
+            "content" : "string",
+            "tour_id" : "integer"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Create success"
+            },
+            "401" : {
+                "message" : "Validation error",
+                "errors" : {}
+            }
+        }
+    }
+
+
+blogs/{id}
+    "get" : {
+        "description" : "Get single blog",
+        "response" : {
+            "200" : {
+                "id" : "string",
+                "title" : "string",
+                "picture" : "string",
+                "autor_name" : "string",
+                "autor_picture" : "string",
+                "create_date" : "date",
+                "content" : "string",
+                "comments" : [
+                    {
+                        "id" : "integer",
+                        "author_name" : "string",
+                        "author_picture" : "string",
+                        "created_date" : "date",
+                        "content" : "string",
+                    }
+                    ...
+                ]
+            }
+        }
+    },
+    "put" : {
+        "description" : "Update blog",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "request" : {
+            "title" : "string",
+            "picture" : "string",
+            "content" : "string"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Update success"
+            },
+            "401" : {
+                "message" : "Data must be different",
+            }
+        }
+    },
+    "delete" : {
+        "description" : "Delete blog",
+        "header" : {
+            "Authorization" : "jwt token"
+        },
+        "response" : {
+            "200" : {
+                "message" : "Delete success"
+            },
+        }
+    }
+
+
+local-experiences
+    "get" : {
+        "description" : "Get all local experiences",
+        "response" : {
+            "200" : [
+                {
+                    "id" : "string",
+                    "title" : "string",
+                    "tour_id" : "string",
+                    "picture" : "string",
+                    "autor_name" : "string",
+                    "autor_picture" : "string",
+                    "create_date" : "date",
+                    "content" : "string"
+                },
+                ...
+            ]
+        }
+    },
+
+
+
+# TABLE
+
+users
+    id 
+    name 
+    email 
+    password 
+    picture
+
+destinations 
+    id 
+    name 
+    picture 
+
+tours 
+    id
+    name 
+    description 
+    itinerary_sugesstion 
+    amenities_facilities 
+    maps 
+
+tour_pictures
+    id 
+    tour_id 
+    picture     
+
+review_ratings
+    id 
+    author_id 
+    tour_id 
+    rating 
+    content 
+    created_date
+
+comments 
+    id 
+    author_id 
+    type 
+    tour_id_blog_id 
+    content 
+    create_date
+
+checkouts 
+    id 
+    user_id 
+    tour_id 
+    first_name 
+    last_name 
+    email 
+    phone 
+    special_requirement 
+
+checkout_addresses 
+    id 
+    checkout_id
+    addres_1 
+    addres_2 
+    city 
+    province 
+    postal_code 
+    contry 
+
+checkout_payments 
+    id
+    payment_method 
+    name 
+    number 
+    expiry_date 
+    cvv
+
+blogs_local_experiences
+    id 
+    title 
+    picture 
+    author_id
+    content_id 
+    tour_id
+    created_date
+
