@@ -3,3 +3,6 @@
 - list needed features
 - make simple open api 
 - make database schema
+
+- create the test feature for each feature
+- code for each reature

@@ -37,15 +37,11 @@ user/register
             "password" : "string"
         }
         "response" : {
-            "200" : {
+            "201" : {
                 "message" : "Register success",
-                "data" : {
-                    "name" : "string",
-                    "email" : "string",
-                    "token" : "string"
-                }
+                "token" : "string" : "jwt token"
             }
-            "401" : {
+            "422" : {
                 "errors" : {
                     "name" : {
                         "error" : "Name must be required"
@@ -56,6 +52,13 @@ user/register
                     "password" : {
                         "error" : "Password must be required"
                     }
+                }
+            },
+            "400" : {
+                "errors" : {
+                    "email" : [
+                        "username already registered"
+                    ]
                 }
             }
         }
@@ -69,15 +72,11 @@ user/login
             "password" : "string"
         },
         "response" : {
-           "200" : {
+           "201" : {
                 "message" : "Login success",
-                "data" : {
-                    "name" : "string",
-                    "email" : "string",
-                    "token" : "string"
-                }
+                "token" : "string" : "jwt token"
            },
-           "401" : {
+           "422" : {
                 "errors" : {
                     "email" : {
                         "error" : "Email must be required"
@@ -87,7 +86,7 @@ user/login
                     }
                 }
            },
-           "400" : {
+           "401" : {
                 "error" : "Email or password wrong"
            }
         }
@@ -124,6 +123,7 @@ user
             }
         }
     },
+
     "put" : {
         "header" : {
             "Authorization" : "jwt token"
@@ -186,7 +186,7 @@ tours
                 {
                     "name" : "string",
                     "picture : "string",
-                    "review_rating" : {},
+                    "review_rating" : "integer",
                 },
                 ...
             ]
@@ -222,6 +222,7 @@ tours/{id}
                 "itinerary_sugesstion" : "string",
                 "amenities_facilities" : "string",
                 "maps" : "string",
+                "destination_name" : "string",
                 "review_rating" : {},
                 "comments" : [
                     {
@@ -268,6 +269,7 @@ reviews-testimonials
             }
         ]
     },
+    
     "post" : {
         "description" : "Create reviews / testimonial",
         "header" : {
@@ -592,9 +594,9 @@ local-experiences
 users
     id 
     name 
-    email 
+    email               : unique
     password 
-    picture
+    picture             : nullable
 
 destinations 
     id 
@@ -603,6 +605,7 @@ destinations
 
 tours 
     id
+    destination_id      : nullable : fk => destinations, onDelete => set null
     name 
     description 
     itinerary_sugesstion 
@@ -611,48 +614,51 @@ tours
 
 tour_pictures
     id 
-    tour_id 
+    tour_id             : fk => tours, onDelete => cascade
     picture     
+    main                : default false
 
 review_ratings
     id 
-    author_id 
-    tour_id 
+    author_id           : fk => users, onDelete => restrict
+    tour_id             : nullable : fk => tours, onDelete => set null
     rating 
-    content 
+    content             : nullable
     created_date
 
 comments 
     id 
-    author_id 
-    type 
-    tour_id_blog_id 
+    author_id           : fk => users, onDelete => restrict
+    type (blog,tour)
+    tour_id             : nullable : fk => tours, onDelete => set null
+    blog_id             : nullable : fk => blogs, onDelete => set null
     content 
     create_date
 
 checkouts 
     id 
-    user_id 
-    tour_id 
+    user_id             : fk => users, onDelete => restrict
+    tour_id             : fk => tours, onDelete => restrict
     first_name 
     last_name 
     email 
     phone 
-    special_requirement 
+    special_requirement : nullable 
 
 checkout_addresses 
     id 
-    checkout_id
-    addres_1 
-    addres_2 
+    checkout_id         : fk => checkouts, onDelete => restrict
+    addres_1            
+    addres_2            : nullable
     city 
     province 
     postal_code 
-    contry 
+    country 
 
 checkout_payments 
     id
-    payment_method 
+    checkout_id         : fk => checkouts, onDelete => restrict
+    payment_method      : enum => debit, credit, e-wallet
     name 
     number 
     expiry_date 
@@ -662,8 +668,8 @@ blogs_local_experiences
     id 
     title 
     picture 
-    author_id
-    content_id 
-    tour_id
+    author_id           : fk => users, onDelete => restrict
+    content
+    tour_id             : nullable : fk => checkouts, onDelete => set null
     created_date
 
