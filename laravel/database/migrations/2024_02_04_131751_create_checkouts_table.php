@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('email');
             $table->string('phone');
             $table->text('special_requirement')->nullable();
+            $table->enum('status', ['pending', 'process', 'done'])->default('pending');
+
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
             $table->foreign('tour_id')->references('id')->on('tours')->onDelete('restrict');

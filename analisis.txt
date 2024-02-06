@@ -26,6 +26,132 @@ Blog /Local Experience
     History transaction
 
 
+# end poin 
+
+
+user 
+    - register 
+        200: Success
+        422: Validation error
+        400: Email already registered
+    - login 
+        200: Success
+        422: Validation error
+        400: Incorrect email or password
+    - get single 
+        200: Success
+        401: Invalid token & user not found
+    - update single 
+        200: Success
+        422: Validation error
+        200: Success (no picture update)
+        400: Data must be different
+
+destination 
+    - get all (top 3)
+        200: Success
+        404: Data not found
+
+tour 
+    - get all (top 3)
+        200: Success
+        404: Data not found
+    - get single 
+        200: Success
+        404: Data not found
+
+review & testimonial
+    - get all (top 3)
+        200: Success
+        404: Data not found
+    - create 
+        201: Success (consider using 201 for resource creation)
+        422: Validation error
+        400: User has not checked out on the tour
+        400: Status must be done
+    - get single for update
+        200: Success
+        404: Data not found
+        400: User has not checked out on the tour
+        400: Status must be done
+        400: User not created the review
+    - update single 
+        200: Success
+        404: Data not found
+        400: Data must be different
+        400: User has not checked out on the tour
+        400: Status must be done
+        400: User not created the review
+    - delete single 
+        200: Success
+        404: Data not found
+        400: User has not checked out on the tour
+        400: Status must be done
+        400: User not created the review
+
+checkout 
+    - create 
+        201: Success
+        422: Validation error
+
+
+
+comment
+    - create 
+        201: Success
+        422: Validation error
+    - get single for update
+        200: Success
+        404: Data not found
+        400: User not created the comment
+    - update single 
+        200: Success
+        404: Data not found
+        400: Data must be different
+        *400: User not created the comment
+    - delete single 
+        200: Success
+        404: Data not found
+        400: User not created the comment
+
+     
+
+*blog & local experience
+    - get all blog 
+        200: Success
+        404: Data not found
+    - get local experience
+        200: Success
+        404: Data not found
+    - create 
+        201: Success blog 
+        201: Success local experience
+        422: Validation error
+        400: User has not checked out (local experience)
+
+           ===
+        63 end poin
+
+    - get single
+        200: Success
+        404: Data not found
+    - get single for update
+        200: Success
+        404: Data not found
+        400: User not created the blog / local experience
+        400: User has not checked out (local experience)
+    - update single 
+        200: Success
+        404: Data not found
+        400: Data must be different
+        400: User not created the blog / local experience
+        400: User has not checked out (local experience)
+   - delete single 
+        200: Success
+        404: Data not found
+        400: User not created the blog / local experience
+        400: User has not checked out (local experience)
+
 
 # END POIN
 
@@ -425,6 +551,7 @@ checkout
             ...
         ]
     }
+
     "post" : {
         "description" : "Create checkout",
         "header" : {

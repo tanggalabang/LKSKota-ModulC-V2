@@ -12,7 +12,7 @@ class Comment extends Model
     protected $table = "comments";
     protected $primaryKey = "id";
     protected $keyType = "int";
-    public $timestamps = false; 
+    public $timestamps = false;
     public $incrementing = true;
 
     protected $fillable = [
@@ -23,4 +23,14 @@ class Comment extends Model
         'content',
         'created_date',
     ];
+
+    public function tour()
+    {
+        return $this->belongsTo(Tour::class);
+    }
+
+    public function blogLocalExperience()
+    {
+        return $this->belongsTo(blogLocalExperience::class);
+    }
 }

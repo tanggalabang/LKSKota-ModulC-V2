@@ -3,15 +3,11 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
-use Hash;
 use App\Helpers\JWTAuth;
-use App\Models\ReviewRating;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Hash;
 
 class UserTest extends TestCase
 {
@@ -21,65 +17,81 @@ class UserTest extends TestCase
      * register
      */
 
+    // 200: Success
     public function testRegisterSuccess()
     {
-        $response = $this->postJson('api/user/register', [
-            'name' => 'Test User',
+        /**
+         * - assertStatus : code http
+         * - assertJson : message
+         * - assertDatabaseHas : stored data
+         * - assertNotNull : token 
+         * - assertTrue : password hash
+         */
+        $userData = [
+            'name' => 'Test',
             'email' => 'test@example.com',
-            'password' => 'password', // Choose a suitable password according to your validation rules
-        ]);
+            'password' => 'password',
+        ];
 
-        $response
-            ->assertStatus(201)
+        $response = $this->postJson('api/user/register', $userData);
+
+        $response->assertStatus(200)
             ->assertJson([
-                'message' => 'Register success',
+                'message' => 'Success',
             ]);
 
-        $user = User::where('email', 'test@example.com')->first();
-
-        $this->assertNotNull($user);
-
-        $this->assertNotNull($user->name);
-
-        $this->assertNotNull($user->password);
-
-        $this->assertNotNull($response['token']);
-    }
-
-    public function testRegisterFailedInvalidData()
-    {
-        $response = $this->postJson('api/user/register', [
-            'name' => '', // Missing name
-            'email' => '', // Missing email
-            'password' => '', // Missing password
+        $this->assertDatabaseHas('users', [
+            'name' => $userData['name'],
+            'email' => $userData['email'],
         ]);
 
-        $response->assertStatus(422); // HTTP 422 Unprocessable Entity
+        $user = User::where('email', $userData['email'])->firstOrFail();
+
+        $this->assertNotNull($response['token']);
+        $this->assertTrue(Hash::check($userData['password'], $user->password));
     }
 
+    // 422: Validation Error
+    public function testRegisterValidationError()
+    {
+        /**
+         * - assertStatus : code http
+         */
+        $userData = [
+            'name' => '',
+            'email' => '',
+            'password' => '',
+        ];
+
+        $response = $this->postJson('api/user/register', $userData);
+
+        $response->assertStatus(422);
+    }
+
+    // 400: Email already registered
     public function testRegisterEmailAlreadyRegistered()
     {
-        // Data for the first registration attempt
+        /**
+         * - assertStatus : code http first user
+         * - assertStatus : code http second user
+         * - assertJson : message
+         */
         $firstUserData = [
             'name' => 'First User',
             'email' => 'duplicate@example.com',
             'password' => 'password',
         ];
 
-        // Perform the first registration
-        $this->postJson('api/user/register', $firstUserData)->assertStatus(201);
+        $this->postJson('api/user/register', $firstUserData)->assertStatus(200);
 
-        // Data for the second registration attempt with the same email
         $secondUserData = [
             'name' => 'Second User',
-            'email' => 'duplicate@example.com', // Same email as the first attempt
+            'email' => 'duplicate@example.com',
             'password' => 'password',
         ];
 
-        // Perform the second registration and expect a 400 status code
         $response = $this->postJson('api/user/register', $secondUserData);
 
-        // Verify the response status and error message
         $response->assertStatus(400)->assertJson([
             "errors" => [
                 "email" => [
@@ -94,694 +106,319 @@ class UserTest extends TestCase
      * login
      */
 
+    // 200: Success
     public function testLoginSuccess()
     {
-        // Data for the first registration attempt
-        $firstUserData = [
-            'name' => 'First User',
+        /**
+         * - assertStatus : code http register user
+         * - assertStatus : code http login user
+         * - assertJson : message
+         * - assertDatabaseHas : stored data
+         * - assertNotNull : token 
+         */
+        $userData = [
+            'name' => 'Test',
             'email' => 'test@example.com',
             'password' => 'password',
         ];
 
-        // Perform the first registration
-        $this->postJson('api/user/register', $firstUserData)->assertStatus(201);
+        $this->postJson('api/user/register', $userData)->assertStatus(200);
 
         $response = $this->postJson('api/user/login', [
-            'email' => 'test@example.com',
-            'password' => 'password', // Choose a suitable password according to your validation rules
+            'email' => $userData['email'],
+            'password' => $userData['password']
         ]);
 
         $response
-            ->assertStatus(201)
+            ->assertStatus(200)
             ->assertJson([
-                'message' => 'Login success',
+                'message' => 'Success',
             ]);
+
+        $this->assertDatabaseHas('users', [
+            'name' => $userData['name'],
+        ]);
 
         $this->assertNotNull($response['token']);
     }
 
-    public function testLoginFailedInvalidData()
+    // 422: Validation error
+    public function testLoginvValidationError()
     {
-        // Data for the first registration attempt
-        $firstUserData = [
-            'name' => 'First User',
+        /**
+         * - assertStatus : code http register user
+         * - assertStatus : code http login user
+         */
+        $userData = [
+            'name' => 'Test',
             'email' => 'test@example.com',
             'password' => 'password',
         ];
 
-        // Perform the first registration
-        $this->postJson('api/user/register', $firstUserData)->assertStatus(201);
+        $this->postJson('api/user/register', $userData)->assertStatus(200);
 
         $response = $this->postJson('api/user/login', [
             'email' => '',
-            'password' => '',
+            'password' => ''
         ]);
 
         $response->assertStatus(422);
     }
 
-    public function testLoginFailedEmailWrong()
+    // 400: Incorrect email or password
+    public function testLoginIncorrectEmailOrPassword()
     {
-        // Data for the first registration attempt
-        $firstUserData = [
-            'name' => 'First User',
+        /**
+         * - assertStatus : code http register user
+         * - assertStatus : code http login user
+         * - assertJson : message
+         */
+        $userData = [
+            'name' => 'Test',
             'email' => 'test@example.com',
             'password' => 'password',
         ];
 
-        // Perform the first registration
-        $this->postJson('api/user/register', $firstUserData)->assertStatus(201);
+        $this->postJson('api/user/register', $userData)->assertStatus(200);
 
         $response = $this->postJson('api/user/login', [
-            'email' => 'wrong@example.com',
-            'password' => 'password', // Choose a suitable password according to your validation rules
+            'email' => 'wrong email',
+            'password' => 'wrong password'
         ]);
 
         $response
-            ->assertStatus(401)
+            ->assertStatus(400)
             ->assertJson([
-                'message' => 'Email or password wrong',
+                "message" => "Email or password wrong"
             ]);
     }
-
-    public function testLoginFailedPasswordWrong()
-    {
-        // Data for the first registration attempt
-        $firstUserData = [
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-        ];
-
-        // Perform the first registration
-        $this->postJson('api/user/register', $firstUserData)->assertStatus(201);
-
-        $response = $this->postJson('api/user/login', [
-            'email' => 'test@example.com',
-            'password' => 'wrong', // Choose a suitable password according to your validation rules
-        ]);
-
-        $response
-            ->assertStatus(401)
-            ->assertJson([
-                'message' => 'Email or password wrong',
-            ]);
-    }
-
 
     /**
-     * get user
+     * get single
      */
 
-    public function testGetSingleUserSuccess()
+    // 200: Success
+    public function testGetSingleSuccess()
     {
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
+        /**
+         * - assertStatus : code http
+         * - assertJson : message & data user
+         */
+        $userData = [
+            'name' => 'Test',
             'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
+            'password' => 'password',
+        ];
 
-        // Generate a JWT token for the created user
+        $user = new User($userData);
+        $user->password = Hash::make($userData['password']);
+        $user->save();
+
         $token = JWTAuth::createTokenJwt($user);
 
         $response = $this->withHeaders([
             'Authorization' =>  $token,
         ])->getJson('api/user');
 
-        // Assert the response status is 200 OK and check user details in the response
         $response
             ->assertStatus(200)
             ->assertJson([
-                'message' => 'Get single success',
+                'message' => 'Success',
                 'data' => [
-                    'name' => 'First User',
-                    'email' => 'test@example.com'
+                    'name' => $userData['name'],
+                    'email' => $userData['email'],
                 ]
             ]);
     }
 
-    public function testGetSingleUserFailedTokenInvalid()
+    // 401: Invalid token & user not found
+    public function testGetSingleInvalidToken()
     {
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
+        /**
+         * - assertStatus : code http
+         * - assertJson : error
+         */
+        $response = $this->getJson('api/user');
 
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->getJson('api/user');
-
-        // Assert the response status is 401 Unauthorized
         $response
-            ->assertStatus(404)
+            ->assertStatus(401)
             ->assertJson([
                 'error' => 'Unauthorized',
             ]);
     }
 
+
     /**
-     * update user
+     * update single
      */
 
-    public function testUpdateProfileSuccessDontHavePicture()
+    // 200: Success
+    public function testUpdateSingleSuccess()
     {
-
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
-
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $oldUser = User::where('email', 'test@example.com')->first();
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->putJson('api/user', [
-            'name' => 'Update User',
-            'email' => 'update@example.com',
-            'password' => Hash::make('update'),
-            'picture' => UploadedFile::fake()->create('document.png', 1000),
-        ]);;
-
-        $response
-            ->assertStatus(200)
-            ->assertJson([
-                "message" => "Update success",
-                "data" => [
-                    'name' => 'Update User',
-                    'email' => 'update@example.com',
-                ]
-            ]);
-
-        $newUser = User::where('email', 'update@example.com')->first();
-
-        self::assertNotEquals($oldUser->password, $newUser->password);
-
-
-        $imageName = $newUser->picture; // Adjust based on your actual response structure
-        $filePath = public_path('images/user/' . $imageName);
-
-        // Check if the file exists
-        $this->assertTrue(file_exists($filePath), "The file does not exist at path {$filePath}");
-    }
-
-    public function testUpdateProfileSuccessHavePicture()
-    {
-
-        $picture = UploadedFile::fake()->create('contoh.png', 1000);
-
-        $imageName = 'contoh' . '.' . $picture->extension();
-        $picture->move(public_path('images/user'), $imageName);
-
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password'),
-            'picture' => $imageName
-        ]);
-
-        //  $image = $imageName;
-
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $oldUser = User::where('email', 'test@example.com')->first();
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->putJson('api/user', [
-            'name' => 'Update User',
-            'email' => 'update@example.com',
-            'password' => Hash::make('update'),
-            'picture' => UploadedFile::fake()->create('document.png', 1000),
-        ]);
-
-        $response
-            ->assertStatus(200)
-            ->assertJson([
-                "message" => "Update success",
-                "data" => [
-                    'name' => 'Update User',
-                    'email' => 'update@example.com',
-                ]
-            ]);
-
-        $newUser = User::where('email', 'update@example.com')->first();
-
-        self::assertNotEquals($oldUser->password, $newUser->password);
-
-
-        $imageName = $newUser->picture; // Adjust based on your actual response structure
-        $filePath = public_path('images/user/' . $imageName);
-
-        // Check if the file exists
-        $this->assertTrue(file_exists($filePath), "The file does not exist at path {$filePath}");
-    }
-
-    public function testUpdateProfileFailedDataMustBeDifferent()
-    {
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
-
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->putJson('api/user', [
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => 'password'
-        ]);;
-
-        $response
-            ->assertStatus(400)
-            ->assertJson([
-                "message" => "Data must be different",
-            ]);
-    }
-
-    public function testUpdateProfileFailedUnvalidImage()
-    {
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
-
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->putJson('api/user', [
-            'name' => 'First User',
+        /**
+         * - assertStatus : code http
+         * - assertJson : message
+         * - assertTrue : password different
+         * - assertTrue : picture exists
+         */
+        $oldUser = [
+            'name' => 'Test',
             'email' => 'test@example.com',
             'password' => 'password',
-            'picture' => UploadedFile::fake()->create('document.pdf', 1000),
-        ]);;
+        ];
 
-        $response
-            ->assertStatus(422);
-    }
+        $newUser = [
+            'name' => 'Update Test',
+            'email' => 'updatetest@example.com',
+            'password' => 'updatepassword',
+        ];
 
-    /**
-     * destination get
-     */
+        $user = new User($oldUser);
+        $user->password = Hash::make($oldUser['password']);
+        $user->save();
 
-    public function testDestinationGet3TopSuccess()
-    {
+        $token = JWTAuth::createTokenJwt($user);
 
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-
-        $response = $this->getJson('api/destinations');
-
-        // dd($response->getContent());
+        $response = $this->withHeaders([
+            'Authorization' =>  $token,
+        ])->putJson('api/user', [
+            'name' => $newUser['name'],
+            'email' => $newUser['email'],
+            'password' => $newUser['password'],
+            'picture' => UploadedFile::fake()->create('image.png', 1000),
+        ]);
 
         $response
             ->assertStatus(200)
             ->assertJson([
-                'message' => 'Get 3 top success',
+                "message" => "Success",
                 "data" => [
-                    [
-                        'id' => 1,
-                        'name' => 'Indonesia',
-                        'picture' => 'test.jpg',
-                        'tours' => 3
-                    ],
-                    [
-                        'id' => 2,
-                        'name' => 'Amerika',
-                        'picture' => 'test.jpg',
-                        'tours' => 2
-                    ],
-                    [
-                        'id' => 3,
-                        'name' => 'Jepang',
-                        'picture' => 'test.jpg',
-                        'tours' => 1,
-                    ]
+                    'name' => $newUser['name'],
+                    'email' => $newUser['email'],
                 ]
             ]);
+
+        $user = User::where('email', $newUser['email'])->first();
+
+        $this->assertTrue(!Hash::check($oldUser['password'], $user->password));
+
+        $imageName = $user->picture;
+        $filePath = public_path('images/user/' . $imageName);
+
+        $this->assertTrue(file_exists($filePath));
     }
 
-    public function testDestinationFailedDataNotFound()
+    // 422: Validation error
+    public function testUpdateSingleValidationError()
     {
-        $response = $this->getJson('api/destinations');
+        /**
+         * - assertStatus : code http
+         */
+        $userData = [
+            'name' => 'Test',
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ];
 
-        // Assert the response status is 401 Unauthorized
+        $user = new User($userData);
+        $user->password = Hash::make($userData['password']);
+        $user->save();
 
-        // dd($response->getContent());
+        $token = JWTAuth::createTokenJwt($user);
+
+
+        $response = $this->withHeaders([
+            'Authorization' =>  $token,
+        ])->putJson('api/user', [
+            'name' => '',
+            'email' => '',
+            'password' => ''
+        ]);
 
         $response
-            ->assertStatus(400)
-            ->assertJson([
-                'message' => 'Data not found',
-            ]);
+            ->assertStatus(422);
     }
 
-    /**
-     * tour get
-     */
-
-    public function testTourGet3TopSuccess()
+    // 200: Success (no picture update)
+    public function testUpdateSingleSuccessNoPicture()
     {
-        // Create a user
-        $this->seed([\Database\Seeders\UserSeeder::class]);
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-        $this->seed([\Database\Seeders\ReviewRatingSeeder::class]);
-        $this->seed([\Database\Seeders\TourPictureSeeder::class]);
+        /**
+         * - assertStatus : code http
+         * - assertJson : message
+         * - assertTrue : password different
+         */
+        $oldUser = [
+            'name' => 'Test',
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ];
 
-        $response = $this->getJson('api/tours');
+        $newUser = [
+            'name' => 'Update Test',
+            'email' => 'updatetest@example.com',
+            'password' => 'updatepassword',
+        ];
 
-        // dd($response->getContent());
+        $user = new User($oldUser);
+        $user->password = Hash::make($oldUser['password']);
+        $user->save();
+
+        $token = JWTAuth::createTokenJwt($user);
+
+        $response = $this->withHeaders([
+            'Authorization' =>  $token,
+        ])->putJson('api/user', [
+            'name' => $newUser['name'],
+            'email' => $newUser['email'],
+            'password' => $newUser['password'],
+        ]);
 
         $response
             ->assertStatus(200)
             ->assertJson([
-                'message' => 'Get 3 top success',
+                "message" => "Success (no picture update)",
                 "data" => [
-                    [
-                        'id' => 1,
-                        "picture" => "test.jpg",
-                        'destination_name' => 'Indonesia',
-                        'name' => 'test',
-                        "review_rating" => 4.5
-                    ],
-                    [
-                        'id' => 2,
-                        "picture" => null,
-                        'destination_name' => 'Indonesia',
-                        'name' => 'test',
-                        "review_rating" => 3.5
-                    ],
-                    [
-                        'id' => 3,
-                        "picture" => null,
-                        'destination_name' => 'Indonesia',
-                        'name' => 'test',
-                        "review_rating" => 1.5
-                    ],
+                    'name' => $newUser['name'],
+                    'email' => $newUser['email'],
                 ]
             ]);
+
+        $user = User::where('email', $newUser['email'])->first();
+
+        $this->assertTrue(!Hash::check($oldUser['password'], $user->password));
     }
 
-    public function testTourGet3TopFailedNotFound()
+    // 400: Data must be different
+    public function testUpdateSingleDataMustBeDifferent()
     {
-
-        $response = $this->getJson('api/tours');
-
-        // dd($response->getContent());
-
-        $response
-            ->assertStatus(400)
-            ->assertJson([
-                'message' => 'Data not found',
-            ]);
-    }
-
-    public function testTourGetSingleSuccess()
-    {
-        // Create a user
-
-        $this->seed([\Database\Seeders\UserSeeder::class]);
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-        $this->seed([\Database\Seeders\ReviewRatingSeeder::class]);
-        $this->seed([\Database\Seeders\TourPictureSeeder::class]);
-        $this->seed([\Database\Seeders\CommentSeeder::class]);
-
-        $response = $this->getJson('api/tours/1');
-
-        // dd($response->getContent());
-
-        $expectedJson = '{
-            "message": "Get single success",
-            "data": {
-                "id": 1,
-                "name": "test",
-                "picture": [
-                    {
-                        "id": 1,
-                        "tour_id": 1,
-                        "picture": "test.jpg",
-                        "main": 1
-                    },
-                    {
-                        "id": 2,
-                        "tour_id": 1,
-                        "picture": "test.jpg",
-                        "main": 0
-                    },
-                    {
-                        "id": 3,
-                        "tour_id": 1,
-                        "picture": "test.jpg",
-                        "main": 0
-                    },
-                    {
-                        "id": 4,
-                        "tour_id": 1,
-                        "picture": "test.jpg",
-                        "main": 0
-                    },
-                    {
-                        "id": 5,
-                        "tour_id": 1,
-                        "picture": "test.jpg",
-                        "main": 0
-                    }
-                ],
-                "description": "test",
-                "itinerary_sugesstion": "test",
-                "amenities_facilities": "test",
-                "maps": "test",
-                "destination_name": "Indonesia",
-                "review_rating": 4.5,
-                "comment": [
-                    {
-                        "id": 1,
-                        "author_id": 1,
-                        "type": "tour",
-                        "tour_id": 1,
-                        "blog_local_experience_id": null,
-                        "content": "test",
-                        "created_date": "2024-02-05"
-                    },
-                    {
-                        "id": 2,
-                        "author_id": 2,
-                        "type": "tour",
-                        "tour_id": 1,
-                        "blog_local_experience_id": null,
-                        "content": "test",
-                        "created_date": "2024-02-05"
-                    },
-                    {
-                        "id": 3,
-                        "author_id": 2,
-                        "type": "tour",
-                        "tour_id": 1,
-                        "blog_local_experience_id": null,
-                        "content": "test",
-                        "created_date": "2024-02-05"
-                    }
-                ]
-            }
-        }';
-
-        $response
-            ->assertStatus(200)
-            ->assertExactJson(json_decode($expectedJson, true));
-    }
-
-    public function testTourGetSingleFailedNotFound()
-    {
-        $response = $this->getJson('api/tours/999');
-
-        // dd($response->getContent());
-
-        $response
-            ->assertStatus(400)
-            ->assertJson([
-                'message' => 'Data not found',
-            ]);
-    }
-
-    /**
-     * reviews testimonial
-     */
-
-    public function testGet3GoodTestimonialDifferentTourSuccess()
-    {
-        $this->seed([\Database\Seeders\UserSeeder::class]);
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-        $this->seed([\Database\Seeders\ReviewRatingSeeder::class]);
-
-        $response = $this->getJson('api/reviews_testimonials');
-
-
-        $expectedJson = '{
-            "message": "Get 4 top success",
-            "data": {
-                "1": {
-                    "id": 1,
-                    "tour_name": "test",
-                    "author_name": "Test 1",
-                    "author_picture": null,
-                    "content": "test",
-                    "rating": 5,
-                    "created_date": "2024-02-05"
-                },
-                "2": {
-                    "id": 3,
-                    "tour_name": "test",
-                    "author_name": "Test 1",
-                    "author_picture": null,
-                    "content": "test",
-                    "rating": 4,
-                    "created_date": "2024-02-05"
-                },
-                "3": {
-                    "id": 5,
-                    "tour_name": "test",
-                    "author_name": "Test 1",
-                    "author_picture": null,
-                    "content": "test",
-                    "rating": 2,
-                    "created_date": "2024-02-05"
-                }
-            }
-        }';
-
-        $response
-            ->assertStatus(200)
-            ->assertExactJson(json_decode($expectedJson, true));
-    }
-
-    public function testGet3GoodTestimonialFailedNotFound()
-    {
-        $response = $this->getJson('api/reviews_testimonials');
-
-        $response
-            ->assertStatus(400)
-            ->assertJson([
-                'message' => 'Data not found',
-            ]);
-    }
-
-    /**
-     * create review
-     */
-    public function testCreateReviewSuccess(){
-
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
+        /**
+         * - assertStatus : code http
+         * - assertJson : message
+         */
+        $dataUser = [
+            'name' => 'Test',
             'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
+            'password' => 'password',
+        ];
 
-        // Generate a JWT token for the created user
+        $user = new User($dataUser);
+        $user->password = Hash::make($dataUser['password']);
+        $user->save();
+
         $token = JWTAuth::createTokenJwt($user);
 
         $response = $this->withHeaders([
             'Authorization' =>  $token,
-        ])->postJson('api/reviews_testimonials',[
-            'tour_id' => 1,
-            'rating' => 4,
-            'content' => 'test', 
+        ])->putJson('api/user', [
+            'name' => $dataUser['name'],
+            'email' => $dataUser['email'],
+            'password' => $dataUser['password'],
         ]);
 
-        // Assert the response status is 200 OK and check user details in the response
         $response
-            ->assertStatus(200)
+            ->assertStatus(400)
             ->assertJson([
-                'message' => 'Create success',
+                "message" => "Data must be different"
             ]);
-
-        $review = ReviewRating::where('content', 'test')->first();
-
-        $this->assertNotNull($review);
-    }
-
-    public function testCreateReviewFailedInvalidData(){
-
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
-
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->postJson('api/reviews_testimonials',[
-            'tour_id' => '',
-            'rating' => '',
-            'content' => 'test', 
-        ]);
-
-        // Assert the response status is 200 OK and check user details in the response
-        $response
-            ->assertStatus(422);
-
-    }
-
-    public function testCreateReviewFailedHaveNotBooking(){
-
-        $this->seed([\Database\Seeders\DestinationSeeder::class]);
-        $this->seed([\Database\Seeders\TourSeeder::class]);
-
-        // Create a user
-        $user = User::factory()->create([
-            'name' => 'First User',
-            'email' => 'test@example.com',
-            'password' => Hash::make('password')
-        ]);
-
-        // Generate a JWT token for the created user
-        $token = JWTAuth::createTokenJwt($user);
-
-        $response = $this->withHeaders([
-            'Authorization' =>  $token,
-        ])->postJson('api/reviews_testimonials',[
-            'tour_id' => '',
-            'rating' => '',
-            'content' => 'test', 
-        ]);
-
-        // Assert the response status is 200 OK and check user details in the response
-        $response
-            ->assertStatus(422);
-
     }
 }

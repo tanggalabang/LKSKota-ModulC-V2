@@ -9,7 +9,7 @@ use Hash;
 use Validator;
 
 class UserController extends Controller
-{ 
+{
     protected $user;
 
     public function __construct(User $user)
@@ -17,7 +17,8 @@ class UserController extends Controller
         $this->user = $user;
     }
 
-    public function register(Request $request) {
+    public function register(Request $request)
+    {
         // validation
         $data = $request->validate([
             'name' => 'required',
@@ -37,35 +38,36 @@ class UserController extends Controller
         }
 
         // get data from request
-         $user = new User($data);
-         $user->password = Hash::make($request->password);
+        $user = new User($data);
+        $user->password = Hash::make($request->password);
 
         // create data form request
-         $user->save();
- 
+        $user->save();
+
         // create token
-         $token = JWTAuth::createTokenJwt($user);
- 
+        $token = JWTAuth::createTokenJwt($user);
+
         // response json
-         return response()->json([
-             'message' => 'Register success',
-             'token' => $token
-         ], 201);
+        return response()->json([
+            'message' => 'Success',
+            'token' => $token
+        ], 200);
     }
 
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         // validation
         $request->validate([
             'email' => 'required',
             'password' => 'required',
-        ]); 
+        ]);
 
         // get user form email request
         $user = User::where('email', $request->email)->first();
 
         // if usre not found
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Email or password wrong'], 401);
+            return response()->json(['message' => 'Email or password wrong'], 400);
         }
 
         // create token
@@ -73,19 +75,21 @@ class UserController extends Controller
 
         // response json 
         return response()->json([
-            'message' => 'Login success',
+            'message' => 'Success',
             'token' => $token
-        ], 201);
+        ], 200);
     }
 
-    public function show(Request $request) {
+    public function show(Request $request)
+    {
         return response()->json([
-            "message" => "Get single success",
+            "message" => "Success",
             "data" => $request->user
         ], 200);
     }
 
-    public function update(Request $request) {
+    public function update(Request $request)
+    {
         // Validation
         $validator = Validator::make($request->all(), [
             'name' => 'required',
@@ -93,32 +97,38 @@ class UserController extends Controller
             'password' => 'required',
             'picture' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
-    
+
         // If validation fails
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()->toArray()], 422);
         }
 
-         // define $image 
-         $oldImage = $request->user->picture;
-         $newImage = null;
-         
-         // if has image 
-         if ($request->hasFile('picture') && $oldImage) {
+        // define $image 
+        $oldImage = $request->user->picture;
+        $newImage = null;
 
-             // naming and placing image
-             $imageName = time().'.'.$request->picture->extension();  
-             $request->picture->move(public_path('images/user'), $imageName);
-             $newImage = $imageName;
+        $responseMessage = 'Success (no picture update)';
 
-             // delete old image
-             if (file_exists(public_path('images/user').'/'.$oldImage)) {
-                 unlink(public_path('images/user').'/'.$oldImage);
-             }
-        }else if ($request->hasFile('picture')){
-            $imageName = time().'.'.$request->picture->extension();  
+        // if has image 
+        if ($request->hasFile('picture') && $oldImage) {
+
+            // naming and placing image
+            $imageName = time() . '.' . $request->picture->extension();
             $request->picture->move(public_path('images/user'), $imageName);
             $newImage = $imageName;
+
+            // delete old image
+            if (file_exists(public_path('images/user') . '/' . $oldImage)) {
+                unlink(public_path('images/user') . '/' . $oldImage);
+            }
+
+            $responseMessage = 'Success';
+        } else if ($request->hasFile('picture')) {
+            $imageName = time() . '.' . $request->picture->extension();
+            $request->picture->move(public_path('images/user'), $imageName);
+            $newImage = $imageName;
+
+            $responseMessage = 'Success';
         }
 
         // Get credentials
@@ -126,26 +136,29 @@ class UserController extends Controller
             ->put('password', Hash::make($request->password))
             ->put('picture', $newImage)
             ->toArray();
-    
+
         // Get user by id
         $user = User::find($request->user->id);
-    
+
         // Check if the data is the same
-        if ($user->name === $credentials['name'] &&
+        if (
+            $user->name === $credentials['name'] &&
             Hash::check($request->password, $user->password) &&
-            $user->email === $credentials['email'] && 
-            !$request->picture) {
+            $user->email === $credentials['email'] &&
+            !$request->picture
+        ) {
             return response()->json(["message" => "Data must be different"], 400);
         }
-    
+
+        
         // Update user
         $updated = $user->update($credentials);
-    
+        
+        // dd($updated);
         // Response json
         return response()->json([
-            "message" => "Update success",
+            "message" => $responseMessage,
             "data" => $updated
         ], 200);
     }
-
 }

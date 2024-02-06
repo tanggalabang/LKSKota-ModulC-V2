@@ -12,7 +12,7 @@ class ReviewRating extends Model
     protected $table = "review_ratings";
     protected $primaryKey = "id";
     protected $keyType = "int";
-    public $timestamps = false; 
+    public $timestamps = false;
     public $incrementing = true;
 
     protected $fillable = [
@@ -22,4 +22,17 @@ class ReviewRating extends Model
         'content',
         'created_date',
     ];
+
+    // Hubungan balik ke Tour
+    public function tour()
+    {
+        return $this->belongsTo(Tour::class);
+    }
+
+
+    // Relasi ke User sebagai author
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id'); // Ganti 'author_id' dengan nama foreign key yang sesuai di tabel Anda
+    }
 }

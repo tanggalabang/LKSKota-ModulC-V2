@@ -12,11 +12,17 @@ class Destination extends Model
     protected $table = "destinations";
     protected $primaryKey = "id";
     protected $keyType = "int";
-    public $timestamps = false; 
+    public $timestamps = false;
     public $incrementing = true;
 
     protected $fillable = [
         'name',
         'picture'
     ];
+
+    // Hubungan one-to-many dengan Tour
+    public function tours()
+    {
+        return $this->hasMany(Tour::class, 'destination_id');
+    }
 }

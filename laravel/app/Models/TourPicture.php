@@ -20,4 +20,10 @@ class TourPicture extends Model
         'picture',
         'main'
     ];
+
+    // Hubungan balik ke Tour
+    public function tour()
+    {
+        return $this->belongsTo(Tour::class);
+    }
 }
