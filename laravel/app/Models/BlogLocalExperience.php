@@ -26,7 +26,7 @@ class BlogLocalExperience extends Model
 
     public function author()
     {
-        return $this->belongsTo(User::class, 'author_id'); // Ganti 'author_id' dengan nama foreign key yang sesuai di tabel Anda
+        return $this->belongsTo(User::class, 'author_id'); 
     }
 
     public function tour()

@@ -33,10 +33,27 @@ class CommentSeeder extends Seeder
         Comment::create([
             'author_id'=> 2,
             'type'=> 'tour',
-            'tour_id'=> 1,
-            'blog_local_experience_id'=> null,
+            'tour_id'=> null,
+            'blog_local_experience_id'=> 1,
             'content'=> 'test',
             'created_date'=> now(),
         ]);
+        Comment::create([
+            'author_id'=> 1,
+            'type'=> 'tour',
+            'tour_id'=> null,
+            'blog_local_experience_id'=> 1,
+            'content'=> 'test',
+            'created_date'=> now(),
+        ]);
+        Comment::create([
+            'author_id'=> 1,
+            'type'=> 'tour',
+            'tour_id'=> null,
+            'blog_local_experience_id'=> 1,
+            'content'=> 'test',
+            'created_date'=> now(),
+        ]);
+        
     }
 }

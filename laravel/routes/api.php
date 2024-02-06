@@ -20,9 +20,9 @@ Route::middleware('jwt')->group(function () {
     Route::delete('comment/{id}', [App\Http\Controllers\CommentController::class, 'destroy']);
 
     Route::post('blog_local_experience', [App\Http\Controllers\BlogLocalExperienceController::class, 'store']);
-    Route::get('blog_local_experience/{id}', [App\Http\Controllers\BlogLocalExperienceController::class, 'show']);
     Route::put('blog_local_experience/{id}', [App\Http\Controllers\BlogLocalExperienceController::class, 'update']);
     Route::delete('blog_local_experience/{id}', [App\Http\Controllers\BlogLocalExperienceController::class, 'destroy']);
+    Route::get('blog_local_experience_2/{id}', [App\Http\Controllers\BlogLocalExperienceController::class, 'show2']);
 
     Route::post('checkout', [App\Http\Controllers\CheckoutController::class, 'store']);
 });
@@ -33,3 +33,4 @@ Route::get('tours/{id}', [App\Http\Controllers\TourController::class, 'show']);
 Route::get('reviews_testimonials', [App\Http\Controllers\ReviewRatingController::class, 'index']);
 Route::get('blog_local_experience', [App\Http\Controllers\BlogLocalExperienceController::class, 'index']);
 Route::get('blog_local_experience_2', [App\Http\Controllers\BlogLocalExperienceController::class, 'index2']);
+Route::get('blog_local_experience/{id}', [App\Http\Controllers\BlogLocalExperienceController::class, 'show']);
